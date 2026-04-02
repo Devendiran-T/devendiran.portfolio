@@ -1,17 +1,14 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { personalInfo } from '../constants'
 import FloatingTorus from './bg3d/FloatingTorus'
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
 
 const inputClass =
   'w-full bg-transparent border border-[#4f9eff22] text-white placeholder-[#8da5c4] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#4f9eff] transition'
 
 const Contact = () => {
-  const formRef = useRef(null)
-  const [form, setForm]       = useState({ name: '', email: '', message: '' })
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus]   = useState(null) // 'success' | 'error'
+  const [form, setForm]         = useState({ name: '', email: '', message: '' })
+  const [loading, setLoading]   = useState(false)
+  const [status, setStatus]     = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
 
   const handleChange = (e) =>
@@ -22,10 +19,27 @@ const Contact = () => {
     setLoading(true)
     setStatus(null)
     setErrorMsg('')
+
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      setStatus('error')
+      setErrorMsg('All fields are required.')
+      setLoading(false)
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setStatus('error')
+      setErrorMsg('Please enter a valid email address.')
+      setLoading(false)
+      return
+    }
+
     try {
-      const res = await fetch(`${BACKEND_URL}/contact`, {
+      const res = await fetch('https://formsubmit.co/ajax/tdevendirandevdevidtamil@gmail.com', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
@@ -33,12 +47,15 @@ const Contact = () => {
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Server error')
-      setStatus('success')
-      setForm({ name: '', email: '', message: '' })
+      if (data.success === 'true' || data.success === true) {
+        setStatus('success')
+        setForm({ name: '', email: '', message: '' })
+      } else {
+        throw new Error('Submission failed')
+      }
     } catch (err) {
       setStatus('error')
-      setErrorMsg(err.message || 'Unknown error')
+      setErrorMsg(err.message || 'Something went wrong.')
     } finally {
       setLoading(false)
     }
@@ -99,7 +116,6 @@ const Contact = () => {
 
         {/* ── Contact form ── */}
         <form
-          ref={formRef}
           onSubmit={handleSubmit}
           className="border border-[#4f9eff18] rounded-2xl p-8 flex flex-col gap-5 flex-1"
           style={{ backdropFilter: 'blur(4px)', background: 'rgba(10,22,40,0.10)' }}
